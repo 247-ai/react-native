@@ -13,6 +13,7 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.support.v4.view.ViewCompat;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -314,6 +315,18 @@ public class ReactScrollView extends ScrollView implements ReactClippingViewGrou
       // aborts the scroller animation when we get to the bottom of the ScrollView content.
 
       int scrollWindowHeight = getHeight() - getPaddingBottom() - getPaddingTop();
+
+      if(Build.VERSION.SDK_INT >= 28) {
+        // Copied from https://github.com/facebook/react-native/pull/21117/files
+        // Workaround.
+        // On Android P if a ScrollView is inverted, we will get a wrong sign for
+        // velocityY (see https://issuetracker.google.com/issues/112385925).
+        // At the same time, mOnScrollDispatchHelper tracks the correct velocity direction.
+        //
+        // Hence, we can use the absolute value from whatever the OS gives
+        // us and use the sign of what mOnScrollDispatchHelper has tracked.
+        velocityY = (int)(Math.abs(velocityY) * Math.signum(mOnScrollDispatchHelper.getYFlingVelocity()));
+      }
 
       mScroller.fling(
         getScrollX(), // startX
